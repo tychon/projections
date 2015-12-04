@@ -1,0 +1,76 @@
+
+# Returns an all-zero m,n-Matrix.
+zeromatrix = (m, n) ->
+  for i from 0 til m
+    a = for j from 0 til n
+          0
+
+# Returns the square identity matrix.
+idmatrix = (n) ->
+  for i from 0 til n
+    a = for j from 0 til n
+          if i == j then 1 else 0
+
+det2 = (m) ->
+  return m[0][0] * m[1][1] - m[1][0] * m[0][1]
+
+det3 = (m) ->
+  return m[0][0]*m[1][1]*m[2][2] + m[0][1]*m[1][2]*m[2][0] +
+         m[0][2]*m[1][0]*m[2][1] - m[0][0]*m[1][2]*m[2][1] -
+         m[0][1]*m[1][0]*m[2][2] - m[0][2]*m[1][1]*m[2][0]
+
+det4 = (m) ->
+  return m[0][3] * m[1][2] * m[2][1] * m[3][0]-m[0][2] * m[1][3] * m[2][1] * m[3][0]-
+         m[0][3] * m[1][1] * m[2][2] * m[3][0]+m[0][1] * m[1][3] * m[2][2] * m[3][0]+
+         m[0][2] * m[1][1] * m[2][3] * m[3][0]-m[0][1] * m[1][2] * m[2][3] * m[3][0]-
+         m[0][3] * m[1][2] * m[2][0] * m[3][1]+m[0][2] * m[1][3] * m[2][0] * m[3][1]+
+         m[0][3] * m[1][0] * m[2][2] * m[3][1]-m[0][0] * m[1][3] * m[2][2] * m[3][1]-
+         m[0][2] * m[1][0] * m[2][3] * m[3][1]+m[0][0] * m[1][2] * m[2][3] * m[3][1]+
+         m[0][3] * m[1][1] * m[2][0] * m[3][2]-m[0][1] * m[1][3] * m[2][0] * m[3][2]-
+         m[0][3] * m[1][0] * m[2][1] * m[3][2]+m[0][0] * m[1][3] * m[2][1] * m[3][2]+
+         m[0][1] * m[1][0] * m[2][3] * m[3][2]-m[0][0] * m[1][1] * m[2][3] * m[3][2]-
+         m[0][2] * m[1][1] * m[2][0] * m[3][3]+m[0][1] * m[1][2] * m[2][0] * m[3][3]+
+         m[0][2] * m[1][0] * m[2][1] * m[3][3]-m[0][0] * m[1][2] * m[2][1] * m[3][3]-
+         m[0][1] * m[1][0] * m[2][2] * m[3][3]+m[0][0] * m[1][1] * m[2][2] * m[3][3]
+
+det = (m) ->
+  if m.length is 1 then m[0][0]
+  else if m.length is 2 then det2(m)
+  else if m.length is 3 then det3(m)
+  else if m.length is 4 then det4(m)
+
+# Multiply two matrices: m_ij = m1_ik * m2_kj.
+mmmult = (m1, m2) ->
+  summands = m1[0].length
+  for i from 0 til m1.length
+    b = for j from 0 til m2[0].length
+          s = for k from 0 til summands
+                m1[i][k] * m2[k][j]
+          s.reduce((a, b) -> a+b)
+
+# Multiply matrix m with vector v: w_i = m_ij * v_j
+mvmult = (m, v) ->
+  for i from 0 til m.length
+    s = for j from 0 til v.length
+          m[i][j] * v[j]
+    s.reduce((a, b) -> a+b)
+
+smmult = (s, m) ->
+  for i from 0 til m.length
+    a = for j from 0 til m[i].length
+          s * m[i][j]
+
+# Returns a rotaton matrix for n-dimensional points
+# in the i, j plane around the coordinate origin.
+# Rotations are only well defined for n > 1.
+# det(rotation_matrix) = 1
+# 0 <= i < j < n <= 4
+rotation_matrix = (n, i, j, phi) ->
+  m = idmatrix(n)
+  m[i][i] = m[j][j] = Math.cos(phi)
+  m[i][j] = - Math.sin(phi)
+  m[j][i] = Math.sin(phi)
+  # TODO direction!
+  return m
+
+export rotation_matrix, mmmult, mvmult, idmatrix, det

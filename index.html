@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Projections</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <!--<script type="text/javascript" src="MathJax.js"></script>-->
+    <script type="text/javascript"
+            src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML">
+    </script>
+    <script type="text/javascript" src="math.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+  </head>
+  <body>
+    <div id="page">
+      <h1>Projections</h1>
+      <h3>Body</h3>
+      <div style="text-align: center">
+        Select an object:
+        <form>
+          <input type="radio" name="object" id="objbox"
+                 onclick="set_obj(this.id)" checked>
+          <label for="objbox">rectangular hexahedron</label>
+          <input type="radio" name="object" id="objell"
+                 onclick="set_obj(this.id)">
+          <label for="objell">ellipsoid</label>
+          <input type="radio" name="object" id="objhex"
+                 onclick="set_obj(this.id)">
+          <label for="objhex">hexahedron</label>
+        </form>
+        <div id="shapeprops" style="padding:1em"></div>
+      </div>
+
+      <h3>4D</h3>
+      <!--<canvas id="canv4D" width="300" height="300"></canvas>
+          <div id="matrix4D"></div>-->
+
+      <h3>3D</h3>
+      <canvas id="canv3D" width="300" height="300"></canvas>
+      <p>Transformation matrix for \(T_3: \mathbb{R}^4\rightarrow\mathbb{R}^3,\;
+        \vec{\xi}\mapsto \vec{x}\)</p>
+      <div id="matrix3D"></div>
+
+      <h3>2D</h3>
+      <canvas id="canv2D" width="300" height="300"></canvas>
+      <p>Transformation matrix for \(T_2: \mathbb{R}^3\rightarrow\mathbb{R}^2,\;
+        \vec{x}\mapsto \vec{y}\)</p>
+      <div id="matrix2D"></div>
+
+      <h3>1D</h3>
+      <canvas id="canv1D" width="300" height="100"></canvas>
+      <p>Transformation matrix for \(T_1: \mathbb{R}^2\rightarrow\mathbb{R},\;
+        \vec{y}\mapsto \vec{\sigma}\)</p>
+      <div id="matrix1D"></div>
+      <div style="margin: 0em; clear: both"></div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,34 @@
+
+body {
+    margin: 0px;
+}
+
+#page {
+    max-width: 750px;
+    margin: 0px auto;
+    padding: 0.5em;
+    background-color: #BBB;
+    color: #080808;
+    font-family: sans-serif;
+    text-align: left;
+}
+
+h1, h2, h3 {
+    text-align: center;
+    font-weight: bold;
+    clear: both;
+}
+
+p {
+    text-align: justify;
+}
+
+canvas {
+    background-color: white;
+    margin: 0.5em;
+    float: left;
+}
+
+.numin {
+    width: 4em;
+}
