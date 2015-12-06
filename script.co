@@ -5,12 +5,56 @@ zip = (a, b) ->
     c.push([a[i], b[i]])
   return c
 
+MAX = 150
+SCALE = 100
+HINTSCALE = 25
+UNIT_VEC_COLORS = <[ red blue green orange cyan ]>
+
+# Mapping used to display 3D objects on canvas.
+DISPLAY3D =
+  * 1, 0, -0.2
+  * 0, 1, -0.3
+# Mapping used to display 1D objects on canvas.
+DISPLAY1D = [[1], [0]]
+
+INSTR3DHINT = get_unit_vec_instr UNIT_VEC_COLORS.slice 0, 3
+INSTR3DHINT = instr_apply INSTR3DHINT, smmult(HINTSCALE, idmatrix 3)
+INSTR2DHINT = get_unit_vec_instr UNIT_VEC_COLORS.slice 0, 2
+INSTR2DHINT = instr_apply INSTR2DHINT, smmult(HINTSCALE, idmatrix 2)
+
+# Initial values of matrix input fields
+INITIALM43 =
+  * 1, 0, 0, 0.4
+  * 0, 1, 0, 0.3
+  * 0, 0, 1, 0.3
+INITIALM32 =
+  * 1, 0, -0.4
+  * 0, 1, -0.6
+INITIALM21 = [[0.7 0.3]]
+
+
+# current_obj elem <[ objbox, objell, objhexa ]>
+current_obj = undefined
+current_instr = undefined
+phi = 0
+
 window.onload = ->
-  set_obj('objbox')
-  setup_input_matrices!
-  draw_axes 'canv3D'
+  set_obj \objbox
+
+  # Show matrix input fields
+  document.getElementById 'matrix3D'
+    .innerHTML = matin_html('matrix3Dtab', 3, 4, INITIALM43, 'x', '\\xi')
+  document.getElementById 'matrix2D'
+    .innerHTML = matin_html('matrix2Dtab', 2, 3, INITIALM32, 'y', 'x')
+  document.getElementById 'matrix1D'
+    .innerHTML = matin_html('matrix1Dtab', 1, 2, INITIALM21, '\\sigma', 'y')
+
+  draw_axes!
   animate!
 
+# Called when object radio buttons are pressed.
+# Sets up obj parameter input and sets `current_obj`.
+# Triggers redraw.
 set_obj = (id) ->
   props = document.getElementById 'shapeprops'
   if id is 'objbox'
@@ -27,174 +71,39 @@ set_obj = (id) ->
     props.innerHTML = ''
   MathJax.Hub.Queue(["Typeset",MathJax.Hub])
 
-fmt_vector = (name, n) ->
-  text = '\\(\\left(\\begin{array}{c}'
-  for i from 0 til n
-    text += name+'_'+i+' \\\\'
-  text += '\\end{array}\\right)\\)'
-
-matrix_input = (id, m, n, vals, nameleft, nameright) ->
-  text = '<table>\n'
-  for i from 0 til m
-    text += '<tr>'
-    if i is 0
-      text += '<td rowspan="'+m+'">'+fmt_vector(nameleft, m)+'=</td>'
-    for j from 0 til n
-      text += '<td><input id="'+id+'_'+i+'_'+j+'" type="number" class="numin" value="'+vals[i][j]+'"></td>'
-    if i is 0
-      text += '<td rowspan="'+m+'">'+fmt_vector(nameright, n)+'</td>'
-    text += '</tr>'
-  text += '</table>\n'
-
-setup_input_matrices = ->
-  # 3D
-  elem = document.getElementById 'matrix3D'
-  vals =
-    * 1, 0, 0, 0.4
-    * 0, 1, 0, 0.3
-    * 0, 0, 1, 0.3
-  text = matrix_input('matrix3Dtab', 3, 4, vals, 'x', '\\xi')
-  elem.innerHTML = text
-
-  #2D
-  elem = document.getElementById 'matrix2D'
-  vals =
-    * 1, 0, -0.4
-    * 0, 1, -0.6
-  text = matrix_input('matrix2Dtab', 2, 3, vals, 'y', 'x')
-  elem.innerHTML = text
-  
-  #1D
-  elem = document.getElementById 'matrix1D'
-  vals = [[0.7 0.3]]
-  text = matrix_input('matrix1Dtab', 1, 2, vals, '\\sigma', 'y')
-  elem.innerHTML = text
-
-matrix_from_input = (id, m, n) ->
-  for i from 0 til m
-    a = for j from 0 til n
-          document.getElementById(id+'_'+i+'_'+j).value
-
-MAX_SCALE = 100
-UNIT_VEC_COLORS = <[ red blue green orange cyan ]>
-
-# Returns instructions for displaying
-get_unit_vec_instr = (n) ->
-  instr = []
-  for i from 0 til n
-    e = [0]*n
-    e[i] = 1
-    instr.push(['line', [0]*n, e, 0.5, UNIT_VEC_COLORS[i]])
-    instr.push(['point', e, 1, UNIT_VEC_COLORS[i]])
-  return instr
-
-# Mapping used to display 3D objects on canvas.
-displaymapping3D =
-  * 1, 0, -0.2
-  * 0, 1, -0.3
-# Mapping used to display 1D objects on canvas.
-displaymapping1D = [[1], [0]]
-
-# sides: list of n side lengths
-get_hypercube_instr = (sides) ->
-  n = sides.length
-  get_hypercube_instr_rec sides, n-1, [0]*n
-
-# double recursive construction
-# i: dimension-1
-get_hypercube_instr_rec = (sides, i, at) ->
-  pack = (v) ->
-    o = at.slice 0
-    o[i] = v
-    return o
-  instr = []
-  n = sides.length
-  if i is 0
-    instr.push([\line, pack(-sides[i]/2), pack(sides[i]/2), 1, \black])
-    instr.push([\point, pack(-sides[i]/2), 2, \black])
-    instr.push([\point, pack(sides[i]/2), 2, \black])
-  else
-    # two lower level hyper cubes
-    at1 = at.slice 0
-    at1[i] += sides[i] / 2.0
-    at2 = at.slice 0
-    at2[i] -= sides[i] / 2.0
-    instr1 = get_hypercube_instr_rec(sides, i-1, at1)
-    instr2 = get_hypercube_instr_rec(sides, i-1, at2)
-    # connect
-    for cmds of zip(instr1, instr2)
-      instr.push(cmds[0])
-      instr.push(cmds[1])
-      if cmds[0][0] is \point
-        instr.push([\line, cmds[0][1], cmds[1][1], 1, \black])
-  return instr
-
-# Draw points, lines and arcs onto a canvas.  Transforms
-# coordinates from R^n to R^2, n >= 1.
-#
-# canv: HTML5 canvas object
-# instr = [
-#   ['point', [coord], radius in px, color]
-#   ['line', [p1], [p2], line width in px, color]
-#   ...]
-# mapping: R^n -> R^2 transformation
-draw = (canv, instr, mapping) ->
-  ctx = canv.getContext('2d')
-  w = canv.width
-  h = canv.height
-  ctx.clearRect(0, 0, w, h)
-  x0 = w/2
-  y0 = h/2
-  for cmd of instr
-    if cmd[0] is \point
-      p1 = mvmult mapping, cmd[1]
-      ctx.beginPath!
-      ctx.arc(x0 + p1[0], y0 - p1[1],
-              cmd[2], 0, 2*Math.PI)
-      ctx.closePath!
-      ctx.fillStyle = cmd[3]
-      ctx.fill!
-    else if cmd[0] is \line
-      p1 = mvmult mapping, cmd[1]
-      p2 = mvmult mapping, cmd[2]
-      ctx.beginPath!
-      ctx.moveTo(x0 + p1[0], y0 - p1[1])
-      ctx.lineTo(x0 + p2[0], y0 - p2[1])
-      ctx.closePath!
-      ctx.lineWidth = cmd[3]
-      ctx.strokeStyle = cmd[4]
-      ctx.stroke!
-
-
-phi = 0
+  current_obj := id
+  instr = get_hypercube_instr [1]*4
+  current_instr := instr.concat get_unit_vec_instr UNIT_VEC_COLORS[...4]
 
 draw_axes = ->
-  m43 = matrix_from_input 'matrix3Dtab' 3 4
-  m32 = matrix_from_input 'matrix2Dtab' 2 3
-  m21 = matrix_from_input 'matrix1Dtab' 1 2
+  instr = current_instr
+  m43 = matin_read 'matrix3Dtab' 3 4
+  m32 = matin_read 'matrix2Dtab' 2 3
+  m21 = matin_read 'matrix1Dtab' 1 2
 
-  es = get_unit_vec_instr 4
-  instr = get_hypercube_instr [1]*4
-  instr = instr.concat(es)
-
-  map4 = smmult 100, idmatrix 4 # scaling
+  map4 = smmult SCALE, idmatrix 4
   map4 = mmmult rotation_matrix(4, 0,3, phi), map4
   map3 = mmmult m43, map4
   map2 = mmmult m32, map3
   map1 = mmmult m21, map2
 
-  canv = document.getElementById 'canv3D'
-  #map = mmmult rotation_matrix(3, 1,2, phi/4), map3
-  map = mmmult rotation_matrix(3, 1,2, phi/5), map3
-  map = mmmult displaymapping3D, map
-  draw canv, instr, map
+  # rotate 3D diagram and add hint
+  rot = rotation_matrix(3, 1,2, phi/2)
+  map3hint = instr_apply INSTR3DHINT, mchain [DISPLAY3D, rot]
+  map3hint = instr_translate map3hint, [-MAX+HINTSCALE+2, -MAX+HINTSCALE+2]
+  map3cube = instr_apply instr, mchain [DISPLAY3D, rot, m43, map4]
+  draw \canv3D, map3cube.concat map3hint
 
-  canv = document.getElementById 'canv2D'
-  draw canv, instr, map2
+  # 2D, add hint
+  map2hint = instr_apply INSTR2DHINT, DISPLAY3D
+  map2hint = instr_translate map2hint, [-MAX+HINTSCALE+2, -MAX+HINTSCALE+2]
+  map2cube = instr_apply instr, mchain [m32, m43, map4]
+  draw \canv2D, map2cube.concat map2hint
 
-  canv = document.getElementById 'canv1D'
-  draw canv, instr, mmmult(displaymapping1D, map1)
-  /*
+  # 1D
+  draw \canv1D, instr_apply(instr, mchain [DISPLAY1D, m21, m32, m43, map4])
+
+  /* # 5 dimensional hypercube
   es = get_unit_vec_instr 5
   instr = get_hypercube_instr [1]*5
   instr = instr.concat(es)
@@ -202,8 +111,7 @@ draw_axes = ->
     * 1, 0, -0.4, 0.4, 0
     * 0, 1, -0.6, 0.3, 0
   map = mmmult map, rotation_matrix(5, 3,4, phi)
-  canv = document.getElementById 'canv2D'
-  draw canv, instr, smmult(100, map)
+  draw 'canv2D', instr, smmult(100, map)
    */
 
 animate = ->

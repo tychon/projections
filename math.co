@@ -2,8 +2,7 @@
 # Returns an all-zero m,n-Matrix.
 zeromatrix = (m, n) ->
   for i from 0 til m
-    a = for j from 0 til n
-          0
+    [0] * n
 
 # Returns the square identity matrix.
 idmatrix = (n) ->
@@ -48,6 +47,12 @@ mmmult = (m1, m2) ->
                 m1[i][k] * m2[k][j]
           s.reduce((a, b) -> a+b)
 
+mchain = (matrices) ->
+  m = matrices[0]
+  for i from 1 til matrices.length
+    m = mmmult m, matrices[i]
+  return m
+
 # Multiply matrix m with vector v: w_i = m_ij * v_j
 mvmult = (m, v) ->
   for i from 0 til m.length
@@ -59,6 +64,19 @@ smmult = (s, m) ->
   for i from 0 til m.length
     a = for j from 0 til m[i].length
           s * m[i][j]
+
+vvadd = (v1, v2) ->
+  for i from 0 til v1.length
+    v1[i] + v2[i]
+
+# Returns a n,n-matrix that has the values of `diag` on
+# its diagonal and is zero everywhere else, where n is
+# the length of `diag`.
+diagonal_matrix = (diag) ->
+  n = diag.length
+  for i from 0 til n
+    a = for j from 0 til n
+          if i == j then diag[i] else 0
 
 # Returns a rotaton matrix for n-dimensional points
 # in the i, j plane around the coordinate origin.

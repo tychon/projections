@@ -1,0 +1,29 @@
+
+
+# Inline MathJax-Tex for displaying a vector with
+# elements named `name`.
+matin_fmt_vector = (name, n) ->
+  text = '\\(\\left(\\begin{array}{c}'
+  for i from 0 til n
+    text += name+'_'+i+' \\\\'
+  text += '\\end{array}\\right)\\)'
+
+# Creates the html for displaying the matrix input fields.
+matin_html = (id, m, n, vals, nameleft, nameright) ->
+  text = '<table>\n'
+  for i from 0 til m
+    text += '<tr>'
+    if i is 0
+      text += '<td rowspan="'+m+'">'+matin_fmt_vector(nameleft, m)+'=</td>'
+    for j from 0 til n
+      text += '<td><input id="'+id+'_'+i+'_'+j+'" type="number" class="numin" value="'+vals[i][j]+'"></td>'
+    if i is 0
+      text += '<td rowspan="'+m+'">'+matin_fmt_vector(nameright, n)+'</td>'
+    text += '</tr>'
+  text += '</table>\n'
+
+# Returns the values in the matrix named `id`.
+matin_read = (id, m, n) ->
+  for i from 0 til m
+    a = for j from 0 til n
+          document.getElementById(id+'_'+i+'_'+j).value

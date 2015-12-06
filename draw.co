@@ -1,0 +1,119 @@
+
+# List of Instructions:
+# instr = [
+#   ['point', [coord], radius in px, color]
+#   ['line', [p1], [p2], line width in px, color]
+# ]
+
+# Applies the given transform to all points
+# (and endpoints of lines) in the instruction
+# list and returns them as new instruction list.
+instr_apply = (instr, transf) ->
+  res = []
+  for i from 0 til instr.length
+    cmd = instr[i].slice(0)
+    if cmd[0] is \point
+      cmd[1] = mvmult transf, cmd[1]
+    else if cmd[0] is \line
+      cmd[1] = mvmult transf, cmd[1]
+      cmd[2] = mvmult transf, cmd[2]
+    res.push(cmd)
+  return res
+
+# Since translations are not easily mapped
+# by matrices, use this function instead.
+instr_translate = (instr, to) ->
+  res = []
+  for i from 0 til instr.length
+    cmd = instr[i].slice(0)
+    if cmd[0] is \point
+      cmd[1] = vvadd(cmd[1], to)
+    else if cmd[0] is \line
+      cmd[1] = vvadd(cmd[1], to)
+      cmd[2] = vvadd(cmd[2], to)
+    res.push(cmd)
+  return res
+
+# Draw points and lines onto a canvas.
+# canvid: id of canvas element as string
+# instr: list of instructions
+draw = (canvid, instr) ->
+  canv = document.getElementById canvid
+  ctx = canv.getContext('2d')
+  w = canv.width
+  h = canv.height
+  ctx.clearRect(0, 0, w, h)
+  x0 = w/2
+  y0 = h/2
+  for cmd of instr
+    if cmd[0] is \point
+      p1 = cmd[1]
+      ctx.beginPath!
+      ctx.arc(x0 + cmd[1][0], y0 - cmd[1][1],
+              cmd[2], 0, 2*Math.PI)
+      ctx.closePath!
+      ctx.fillStyle = cmd[3]
+      ctx.fill!
+    else if cmd[0] is \line
+      ctx.beginPath!
+      ctx.moveTo(x0 + cmd[1][0], y0 - cmd[1][1])
+      ctx.lineTo(x0 + cmd[2][0], y0 - cmd[2][1])
+      ctx.closePath!
+      ctx.lineWidth = cmd[3]
+      ctx.strokeStyle = cmd[4]
+      ctx.stroke!
+
+
+##########################################
+# Functions for creating instruction lists
+
+# Returns instructions for displaying unit vectors
+# in n Dimensions, where n is the length of `colors`.
+get_unit_vec_instr = (colors) ->
+  instr = []
+  n = colors.length
+  for i from 0 til n
+    e = [0]*n
+    e[i] = 1
+    instr.push(['line', [0]*n, e, 0.5, UNIT_VEC_COLORS[i]])
+    instr.push(['point', e, 1, UNIT_VEC_COLORS[i]])
+  return instr
+
+# Returns instructions for displaying n-dimensional
+# Hypercube centered around the coordinate origin,
+# where n is the length of `sides`, n >= 1.
+#
+# sides: list of n side lengths
+get_hypercube_instr = (sides) ->
+  n = sides.length
+  get_hypercube_instr_rec sides, n-1, [0]*n
+
+# double recursive construction of hypercube
+# for `get_hypercube_instr()`
+# i: dimension-1
+get_hypercube_instr_rec = (sides, i, at) ->
+  pack = (v) ->
+    o = at.slice 0
+    o[i] = v
+    return o
+  instr = []
+  n = sides.length
+  if i is 0
+    instr.push([\line, pack(-sides[i]/2), pack(sides[i]/2), 1, \black])
+    instr.push([\point, pack(-sides[i]/2), 2, \black])
+    instr.push([\point, pack(sides[i]/2), 2, \black])
+  else
+    # two lower level hyper cubes
+    at1 = at.slice 0
+    at1[i] += sides[i] / 2.0
+    at2 = at.slice 0
+    at2[i] -= sides[i] / 2.0
+    instr1 = get_hypercube_instr_rec(sides, i-1, at1)
+    instr2 = get_hypercube_instr_rec(sides, i-1, at2)
+    # connect
+    for cmds of zip(instr1, instr2)
+      instr.push(cmds[0])
+      instr.push(cmds[1])
+      if cmds[0][0] is \point
+        instr.push([\line, cmds[0][1], cmds[1][1], 1, \black])
+  return instr
